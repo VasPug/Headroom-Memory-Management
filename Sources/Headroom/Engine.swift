@@ -99,4 +99,15 @@ enum Settings {
         get { UserDefaults.standard.string(forKey: "side") ?? "right" }
         set { UserDefaults.standard.set(newValue, forKey: "side") }
     }
+
+    /// Where the user dragged the pill to, if they ever did.
+    static var pillX: CGFloat? {
+        get { (UserDefaults.standard.object(forKey: "pillX") as? Double).map { CGFloat($0) } }
+        set { UserDefaults.standard.set(newValue.map { Double($0) }, forKey: "pillX") }
+    }
+
+    static var hasLaunchedBefore: Bool {
+        get { UserDefaults.standard.bool(forKey: "hasLaunched") }
+        set { UserDefaults.standard.set(newValue, forKey: "hasLaunched") }
+    }
 }

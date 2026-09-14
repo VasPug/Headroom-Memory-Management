@@ -17,6 +17,9 @@ final class NotchContentView: NSView {
     var onClick: (() -> Void)?
     var onRightClick: ((NSEvent) -> Void)?
     var onClose: (() -> Void)?
+    var onDragBegan: (() -> Void)?
+    var onDragMoved: ((CGFloat) -> Void)?
+    var onDragEnded: (() -> Void)?
 
     private var rowViews: [RowView] = []
 
@@ -117,7 +120,29 @@ final class NotchContentView: NSView {
     /// swallowed by the window system instead of reaching the control.
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
-    override func mouseDown(with event: NSEvent) { onClick?() }
+    private var dragging = false
+
+    override func mouseDown(with event: NSEvent) {
+        // Command-drag repositions the pill, the same gesture macOS uses for
+        // rearranging menu bar items.
+        if event.modifierFlags.contains(.command) {
+            dragging = true
+            onDragBegan?()
+            return
+        }
+        onClick?()
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard dragging else { return }
+        onDragMoved?(event.deltaX)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        guard dragging else { return }
+        dragging = false
+        onDragEnded?()
+    }
     override func rightMouseDown(with event: NSEvent) { onRightClick?(event) }
 
     // MARK: - Drawing

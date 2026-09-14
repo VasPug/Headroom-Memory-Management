@@ -56,6 +56,13 @@ public final class UsageTracker {
         dirty = true
     }
 
+    /// Forgets everything it has learned about you and removes the file.
+    public func erase() {
+        lastUsed = [:]
+        dirty = false
+        try? FileManager.default.removeItem(at: storeURL)
+    }
+
     public func flush() {
         guard dirty else { return }
         let payload = lastUsed.mapValues { $0.timeIntervalSince1970 }

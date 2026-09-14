@@ -16,6 +16,7 @@ final class HUDController: NSObject {
     private var pinned = false
     private var outsideTicks = 0
     private var notificationDeadline = Date.distantFuture
+    private var dragging = false
 
     private var hoverTimer: Timer?
     private var clickMonitor: Any?
@@ -54,6 +55,9 @@ final class HUDController: NSObject {
         content.onQuit = { [weak self] in self?.handleQuit($0) }
         content.onKeep = { [weak self] in self?.handleKeep($0) }
         content.onClose = { [weak self] in self?.dismiss() }
+        content.onDragBegan = { [weak self] in self?.beginDrag() }
+        content.onDragMoved = { [weak self] in self?.moveDrag(by: $0) }
+        content.onDragEnded = { [weak self] in self?.dragging = false }
         content.onClick = { [weak self] in self?.handleClick() }
         content.onRightClick = { [weak self] event in
             guard let self else { return }
@@ -86,6 +90,22 @@ final class HUDController: NSObject {
             MainActor.assumeIsolated {
                 guard let self, self.mode != .collapsed else { return }
                 if !self.panel.frame.contains(NSEvent.mouseLocation) { self.dismiss() }
+            }
+        }
+
+        // First run: open once so the pill is findable. Nothing explains where
+        // a 92-point pill lives better than showing it.
+        if !Settings.hasLaunchedBefore {
+            Settings.hasLaunchedBefore = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+                MainActor.assumeIsolated {
+                    guard let self, self.mode == .collapsed else { return }
+                    self.pinned = true
+                    self.setMode(.expanded)
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 8) { [weak self] in
+                MainActor.assumeIsolated { self?.dismiss() }
             }
         }
 
@@ -178,7 +198,23 @@ final class HUDController: NSObject {
         }
     }
 
+    /// Shrink to the pill first, so what you drag is what you are placing.
+    private func beginDrag() {
+        dragging = true
+        pinned = false
+        notificationDeadline = .distantFuture
+        setMode(.collapsed, animated: false)
+    }
+
+    private func moveDrag(by dx: CGFloat) {
+        var frame = panel.frame
+        frame.origin.x = geometry.clampX(frame.origin.x + dx, width: frame.width)
+        panel.setFrameOrigin(frame.origin)
+        Settings.pillX = frame.origin.x
+    }
+
     private func tick() {
+        guard !dragging else { return }
         let inside = panel.frame.insetBy(dx: -2, dy: -2).contains(NSEvent.mouseLocation)
         switch mode {
         case .collapsed:
@@ -258,6 +294,8 @@ final class HUDController: NSObject {
         }
 
         menu.addItem(.separator())
+        menu.addItem(withTitle: "Erase learned usage", action: #selector(eraseUsage), keyEquivalent: "").target = self
+        menu.addItem(.separator())
         menu.addItem(withTitle: "Quit Headroom", action: #selector(quitApp), keyEquivalent: "q").target = self
         return menu
     }
@@ -266,7 +304,13 @@ final class HUDController: NSObject {
     @objc private func clearProtected() { Settings.protectedIDs = []; engine.rescan() }
     @objc private func flipSide() {
         Settings.side = Settings.side == "right" ? "left" : "right"
+        Settings.pillX = nil   // the side toggle overrides a dragged position
         if mode == .collapsed { panel.setFrame(geometry.collapsedFrame(), display: true) }
+    }
+
+    @objc private func eraseUsage() {
+        engine.usage.erase()
+        engine.rescan()
     }
     @objc private func quitApp() {
         engine.usage.flush()

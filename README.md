@@ -27,13 +27,55 @@ The app you're looking at, anything you touched in the last five minutes, anythi
 CPU (so it won't kill a running build), Finder/Dock/WindowServer, any process not owned by
 you, and anything you've marked **Keep**.
 
+## Install
+
+Requires macOS 14+ and the Xcode Command Line Tools (`xcode-select --install`).
+Full Xcode is not needed.
+
+```sh
+git clone <repo-url> Headroom
+cd Headroom
+./build-app.sh --install
+```
+
+That builds the app, puts it in `/Applications`, starts it, and registers a
+LaunchAgent so it comes back at login. On first run it opens the panel once so
+you can see where the pill lives.
+
+To build without installing, run `./build-app.sh` and open `build/Headroom.app`.
+
+## Uninstall
+
+```sh
+./build-app.sh --uninstall
+```
+
+Removes the app, the LaunchAgent, the preferences, and everything it learned
+about you. To quit just this session without uninstalling, right-click the pill
+and choose **Quit Headroom**.
+
+## Tracking, and turning it off
+
+Headroom records one thing: a timestamp of when each app was last frontmost. It
+lives in `~/Library/Application Support/Headroom/usage.json`, it never leaves
+your machine, and there is no network code in this project.
+
+- **Erase learned usage** in the right-click menu wipes the file and starts over.
+- **Quit Headroom** stops all recording; nothing is recorded while it is not running.
+- `./build-app.sh --uninstall` removes the data along with the app.
+
+No Accessibility or Screen Recording permission is requested, so Headroom cannot
+see your keystrokes or your screen — only which app is in front, and what `ps`
+reports.
+
 ## Using it
 
 - **Hover** the pill → full list
 - **Click** → panel stays open until you close it
 - **Close** button, `Esc`, or a click anywhere else → dismiss
 - **Keep** (appears on row hover) → never suggest that app again
-- **Right-click** → rescan, flip to the other side of the notch, clear kept apps, quit
+- **⌘-drag** the HUD → move the pill anywhere along the top of the screen
+- **Right-click** → rescan, flip sides, erase learned usage, quit
 - `kill -USR1 $(pgrep -x Headroom)` → replay the recommendation on demand
 
 ## Build
@@ -57,6 +99,6 @@ Uninstall: `launchctl bootout gui/$(id -u)/io.github.vaspug.headroom && rm -rf /
 | `HeadroomCore/CandidateBuilder` | joins processes to apps; performs the quit |
 | `Headroom/NotchContentView` | the HUD, cut from one path so it hangs off the notch |
 | `Headroom/HUDController` | the pill → notification → panel state machine |
+| `Headroom/NotchGeometry` | where the notch is, and where the HUD sits on it |
 
-Usage data lives in `~/Library/Application Support/Headroom/usage.json` and never leaves
-the machine. No Accessibility or Screen Recording permissions are needed.
+MIT licensed. Contributions welcome.

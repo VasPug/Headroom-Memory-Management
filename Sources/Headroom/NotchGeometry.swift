@@ -35,19 +35,30 @@ struct NotchGeometry {
 
     var collapsedSize: CGSize { CGSize(width: 92, height: stripHeight) }
 
-    /// The pill tucks against whichever side of the notch the user prefers.
+    /// The pill sits beside the notch by default, or wherever it was dragged.
     func collapsedFrame() -> CGRect {
         let size = collapsedSize
-        let x = Settings.side == "left"
+        let fallback = Settings.side == "left"
             ? notchRect.minX - size.width - 6
             : notchRect.maxX + 6
+        let x = clampX(Settings.pillX ?? fallback, width: size.width)
         return CGRect(x: x, y: screen.frame.maxY - size.height, width: size.width, height: size.height)
+    }
+
+    func clampX(_ x: CGFloat, width: CGFloat) -> CGFloat {
+        min(max(x, screen.frame.minX + 4), screen.frame.maxX - width - 4)
     }
 
     func expandedFrame(contentHeight: CGFloat, width: CGFloat = 400) -> CGRect {
         let height = stripHeight + contentHeight
+        // The panel hangs from the notch, but never so far from the pill that
+        // the two read as unrelated. Dragged far enough away, it stops spanning
+        // the notch and the cutout drops away on its own.
         var x = notchRect.midX - width / 2
-        // Keep it on screen if the notch sits near an edge.
+        let pill = collapsedFrame().midX
+        let tether: CGFloat = 48
+        if pill < x + tether { x = pill - tether }
+        if pill > x + width - tether { x = pill - width + tether }
         x = min(max(x, screen.frame.minX + 8), screen.frame.maxX - width - 8)
         return CGRect(x: x, y: screen.frame.maxY - height, width: width, height: height)
     }
