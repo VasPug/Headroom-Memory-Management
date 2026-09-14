@@ -1,0 +1,5 @@
+runProcessScannerTests()
+runRankerTests()
+runPressureTests()
+runColdStartTests()
+T.finish()
