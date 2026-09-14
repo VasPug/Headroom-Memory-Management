@@ -10,9 +10,12 @@ apps you actually use, and asks you to close one while the Mac is still responsi
 
 - **Lives on the notch.** A slim pill beside the notch shows headroom remaining. Hover it
   for the full list; it drops out of the notch like part of the hardware.
-- **Speaks first, once.** When pressure crosses into warning territory it slides out a
-  notification with a single recommendation — "Quit Cursor? Frees 2.4 GB · idle 3d 1h".
-  Click it for the full list, hit Quit, or ignore it and it withdraws after nine seconds.
+- **Speaks up the moment things get worse.** Every escalation alerts immediately — into
+  warning, and again if it goes on to critical. It slides out of the notch with one
+  recommendation ("Quit Cursor? Frees 2.4 GB · idle 3d 1h"). Click it for the full list,
+  hit Quit, or ignore it and it withdraws after nine seconds. It won't repeat itself while
+  nothing has changed, and it re-arms only after memory genuinely recovers — not on a
+  timer — so a reading wobbling across a threshold can't machine-gun you.
 - **Learns your habits.** It watches which app is frontmost and remembers when you last
   touched each one. Ranking is memory × idle time, so the 2 GB thing you haven't looked at
   since Tuesday outranks the 3 GB thing you were in a minute ago.
@@ -70,8 +73,7 @@ reports.
 
 ## Using it
 
-- **Hover** the pill → full list
-- **Click** → panel stays open until you close it
+- **Click** the pill → full list. It stays open until you close it; hovering does nothing.
 - **Close** button, `Esc`, or a click anywhere else → dismiss
 - **Keep** (appears on row hover) → never suggest that app again
 - **⌘-drag** the HUD → move the pill anywhere along the top of the screen
@@ -95,6 +97,7 @@ Uninstall: `launchctl bootout gui/$(id -u)/io.github.vaspug.headroom && rm -rf /
 | `HeadroomCore/ProcessScanner` | parses `ps`, folds subtrees into their root |
 | `HeadroomCore/Pressure` | VM stats → a gradient that fires earlier than macOS does |
 | `HeadroomCore/Ranker` | what's worth quitting: big, cold, and idle |
+| `HeadroomCore/NudgePolicy` | when it is allowed to interrupt you |
 | `HeadroomCore/UsageTracker` | per-app last-used times, persisted |
 | `HeadroomCore/CandidateBuilder` | joins processes to apps; performs the quit |
 | `Headroom/NotchContentView` | the HUD, cut from one path so it hangs off the notch |

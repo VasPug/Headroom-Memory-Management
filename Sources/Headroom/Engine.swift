@@ -13,11 +13,9 @@ final class Engine {
     /// Fires when pressure first turns bad, so the HUD can announce itself.
     var onNudge: (() -> Void)?
 
-    private var lastLevel: PressureLevel = .comfortable
-    private var lastNudge = Date.distantPast
+    private var nudgePolicy = NudgePolicy()
     private var scanning = false
 
-    private let nudgeCooldown: TimeInterval = 30 * 60
     private let pressureInterval: TimeInterval = 3
     private let scanInterval: TimeInterval = 15
 
@@ -44,14 +42,11 @@ final class Engine {
         reading = PressureMonitor.evaluate(PressureMonitor.currentSample())
         onUpdate?()
 
-        // Only nudge on the way up, and not more than twice an hour.
-        let worsened = reading.level != lastLevel && reading.level != .comfortable
-        let escalated = lastLevel == .comfortable || (lastLevel == .warn && reading.level == .critical)
-        if worsened, escalated, Date().timeIntervalSince(lastNudge) > nudgeCooldown, !ranked.isEmpty {
-            lastNudge = Date()
+        // Every escalation is reported the moment it happens; the policy only
+        // suppresses repeats and threshold wobble.
+        if nudgePolicy.shouldNotify(reading, hasRecommendation: !ranked.isEmpty) {
             onNudge?()
         }
-        lastLevel = reading.level
     }
 
     func rescan() {

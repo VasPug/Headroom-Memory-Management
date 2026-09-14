@@ -12,9 +12,6 @@ final class HUDController: NSObject {
     private let content: NotchContentView
 
     private var mode: HUDMode = .collapsed
-    /// Set when you open the panel yourself; it then stays until you close it.
-    private var pinned = false
-    private var outsideTicks = 0
     private var notificationDeadline = Date.distantFuture
     private var dragging = false
 
@@ -100,7 +97,6 @@ final class HUDController: NSObject {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
                 MainActor.assumeIsolated {
                     guard let self, self.mode == .collapsed else { return }
-                    self.pinned = true
                     self.setMode(.expanded)
                 }
             }
@@ -141,7 +137,6 @@ final class HUDController: NSObject {
         let opening = mode == .collapsed
         mode = new
         content.mode = new
-        outsideTicks = 0
 
         content.needsLayout = true
         content.layoutSubtreeIfNeeded()
@@ -174,7 +169,6 @@ final class HUDController: NSObject {
     }
 
     private func dismiss() {
-        pinned = false
         notificationDeadline = .distantFuture
         setMode(.collapsed)
     }
@@ -190,18 +184,17 @@ final class HUDController: NSObject {
     private func handleClick() {
         switch mode {
         case .collapsed, .notification:
-            pinned = true
             notificationDeadline = .distantFuture
             setMode(.expanded)
         case .expanded:
-            pinned.toggle()
+            break   // clicking inside the panel does nothing; Close, Esc or a
+                    // click outside dismisses it
         }
     }
 
     /// Shrink to the pill first, so what you drag is what you are placing.
     private func beginDrag() {
         dragging = true
-        pinned = false
         notificationDeadline = .distantFuture
         setMode(.collapsed, animated: false)
     }
@@ -218,7 +211,7 @@ final class HUDController: NSObject {
         let inside = panel.frame.insetBy(dx: -2, dy: -2).contains(NSEvent.mouseLocation)
         switch mode {
         case .collapsed:
-            if inside { setMode(.expanded) }
+            break   // the pill opens on click, never on hover
         case .notification:
             // Reading it keeps it up; walking away lets it go.
             if inside {
@@ -227,9 +220,7 @@ final class HUDController: NSObject {
                 setMode(.collapsed)
             }
         case .expanded:
-            guard !pinned else { return }
-            outsideTicks = inside ? 0 : outsideTicks + 1
-            if outsideTicks >= 2 { dismiss() }   // ~0.36s of grace
+            break   // stays open until dismissed
         }
     }
 
@@ -256,15 +247,11 @@ final class HUDController: NSObject {
     private func handleQuit(_ item: RankedCandidate) {
         let fromNotification = mode == .notification
         engine.quit(item)
-        if fromNotification {
-            dismiss()
-        } else {
-            pinned = true   // keep the panel open so you can quit several in a row
-        }
+        if fromNotification { dismiss() }
+        // From the panel it stays open, so you can quit several in a row.
     }
 
     private func handleKeep(_ item: RankedCandidate) {
-        pinned = true
         engine.protect(item)
     }
 

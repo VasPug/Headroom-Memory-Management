@@ -45,10 +45,10 @@ public struct PressureReading: Equatable, Sendable {
 }
 
 public enum PressureMonitor {
-    static let warnRatio = 0.70
-    static let criticalRatio = 0.85
-    static let warnSwapBytes: Int64 = 1 * 1024 * 1024 * 1024
-    static let criticalSwapBytes: Int64 = 4 * 1024 * 1024 * 1024
+    public static let warnRatio = 0.70
+    public static let criticalRatio = 0.85
+    public static let warnSwapBytes: Int64 = 1 * 1024 * 1024 * 1024
+    public static let criticalSwapBytes: Int64 = 4 * 1024 * 1024 * 1024
     static let swapScoreCeiling = 8.0  // GB of swap that counts as "fully bad"
 
     /// Deliberately fires earlier than macOS does. The system only escalates

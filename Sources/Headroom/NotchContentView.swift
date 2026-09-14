@@ -121,6 +121,19 @@ final class NotchContentView: NSView {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     private var dragging = false
+    /// The pill opens on click, so it has to look like it can be clicked.
+    private var hoveringPill = false { didSet { if mode == .collapsed { needsDisplay = true } } }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        trackingAreas.filter { $0.owner === self }.forEach(removeTrackingArea)
+        addTrackingArea(NSTrackingArea(rect: bounds,
+                                       options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                                       owner: self))
+    }
+
+    override func mouseEntered(with event: NSEvent) { hoveringPill = true }
+    override func mouseExited(with event: NSEvent) { hoveringPill = false }
 
     override func mouseDown(with event: NSEvent) {
         // Command-drag repositions the pill, the same gesture macOS uses for
@@ -163,7 +176,7 @@ final class NotchContentView: NSView {
 
     private func drawCollapsed() {
         let pill = NSRect(x: 0, y: (bounds.height - 22) / 2, width: bounds.width, height: 22)
-        NSColor(white: 1, alpha: 0.08).setFill()
+        NSColor(white: 1, alpha: hoveringPill ? 0.16 : 0.08).setFill()
         let path = NSBezierPath(roundedRect: pill, xRadius: 11, yRadius: 11)
         path.fill()
         Palette.hairline.setStroke()
