@@ -66,6 +66,12 @@ swift run HeadroomTests --state # print what your Mac looks like right now
 
 ## Using it
 
+<p align="center">
+  <img src="docs/images/pill.png" alt="The collapsed Headroom pill sitting beside the notch" width="260">
+  <br>
+  <em>Ambient by default: a pill beside the notch. Click it for the list.</em>
+</p>
+
 |  |  |
 |---|---|
 | **Click** the pill | open the ranked list; it stays until you dismiss it |
@@ -75,10 +81,16 @@ swift run HeadroomTests --state # print what your Mac looks like right now
 | **⌘-drag** the HUD | move the pill anywhere along the top of the screen |
 | **Right-click** | rescan, flip sides, erase learned usage, quit |
 
-<p align="center">
-  <img src="docs/images/panel-healthy.png" alt="Panel reading Memory is healthy with a full green meter" width="420">
-  <img src="docs/images/panel-struggling.png" alt="Panel reading Your Mac is struggling, swapping 28 MB/s both ways" width="420">
-</p>
+<table align="center">
+<tr>
+<td width="50%"><img src="docs/images/panel-healthy.png" alt="Panel reading Memory is healthy above a nearly full green meter"></td>
+<td width="50%"><img src="docs/images/panel-struggling.png" alt="Panel reading Your Mac is struggling, with the reason: swapping 28 MB/s both ways"></td>
+</tr>
+<tr>
+<td align="center"><em><strong>86% of memory in use — and completely fine.</strong><br>The meter is full because memory is full. It's green because nothing is actually wrong.</em></td>
+<td align="center"><em><strong>The same meter, genuinely in trouble.</strong><br>Colour changed, and it names the mechanism rather than a scary number.</em></td>
+</tr>
+</table>
 
 ## How it works
 
