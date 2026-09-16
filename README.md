@@ -8,7 +8,8 @@ apps you actually use, and asks you to close one while the Mac is still responsi
 
 ## What it does
 
-- **Lives on the notch.** A slim pill beside the notch shows headroom remaining. Hover it
+- **Lives on the notch.** A slim pill beside the notch shows a meter that fills as memory
+  is consumed, green through amber to red. Hover it
   for the full list; it drops out of the notch like part of the hardware.
 - **Speaks up the moment things get worse.** Every escalation alerts immediately — into
   warning, and again if it goes on to critical. It slides out of the notch with one

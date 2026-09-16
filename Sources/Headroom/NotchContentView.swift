@@ -170,9 +170,11 @@ final class NotchContentView: NSView {
     }
 
     // The pill beside the notch.
-    /// Both bars show headroom *remaining*, so the bar drains in step with the
-    /// number beside it instead of growing while the number shrinks.
-    private var remaining: CGFloat { CGFloat(max(0, min(1, 1 - reading.score))) }
+    /// The bar fills as memory is consumed, the way every storage and battery
+    /// meter does: nearly full and red means nearly out. Draining it instead --
+    /// so it tracked the "GB free" number -- made a red bar look almost empty,
+    /// which read as "barely any problem" at exactly the wrong moment.
+    private var filled: CGFloat { CGFloat(max(0, min(1, reading.score))) }
 
     private func drawCollapsed() {
         let pill = NSRect(x: 0, y: (bounds.height - 22) / 2, width: bounds.width, height: 22)
@@ -188,7 +190,7 @@ final class NotchContentView: NSView {
         Palette.track.setFill()
         NSBezierPath(roundedRect: track, xRadius: 2.5, yRadius: 2.5).fill()
         level.setFill()
-        let fillWidth = max(3, track.width * remaining)
+        let fillWidth = max(3, track.width * filled)
         NSBezierPath(roundedRect: NSRect(x: track.minX, y: track.minY, width: fillWidth, height: track.height),
                      xRadius: 2.5, yRadius: 2.5).fill()
 
@@ -338,7 +340,7 @@ final class NotchContentView: NSView {
         Palette.track.setFill()
         NSBezierPath(roundedRect: track, xRadius: barHeight / 2, yRadius: barHeight / 2).fill()
         level.setFill()
-        let w = max(barHeight, track.width * remaining)
+        let w = max(barHeight, track.width * filled)
         NSBezierPath(roundedRect: NSRect(x: track.minX, y: track.minY, width: w, height: track.height),
                      xRadius: barHeight / 2, yRadius: barHeight / 2).fill()
 

@@ -37,6 +37,17 @@ enum Renderer {
         note.layoutSubtreeIfNeeded()
         write(note, to: dir, name: "05-notification")
 
+        // The full colour ramp, which a machine under constant pressure never shows.
+        for (name, usedGB, swapGB) in [("comfortable", 5.0, 0.0), ("warn", 12.0, 0.5), ("critical", 15.0, 5.0)] {
+            let total: Int64 = 16 * 1_073_741_824
+            let avail = total - Int64(usedGB * 1_073_741_824)
+            let sample = MemorySample(totalBytes: total, freeBytes: avail / 3, purgeableBytes: avail / 3,
+                                      fileBackedBytes: avail - 2 * (avail / 3), compressedBytes: 0,
+                                      swapUsedBytes: Int64(swapGB * 1_073_741_824))
+            write(state(name, geometry: geometry, reading: PressureMonitor.evaluate(sample), items: rank(live)),
+                  to: dir, name: "06-level-\(name)")
+        }
+
         // Nothing worth suggesting.
         write(state("empty", geometry: geometry, reading: real, items: []), to: dir, name: "03-empty")
 
