@@ -5,10 +5,17 @@ import HeadroomCore
 /// what is running, and what you have actually touched.
 @MainActor
 final class Engine {
-    private(set) var reading = PressureMonitor.evaluate(PressureMonitor.currentSample())
+    private var sampler = PressureSampler()
+    private(set) var reading: PressureReading
     private(set) var ranked: [RankedCandidate] = []
 
     let usage = UsageTracker()
+
+    init() {
+        var bootstrap = PressureSampler()
+        reading = PressureMonitor.evaluate(bootstrap.sample())
+        sampler = bootstrap
+    }
     var onUpdate: (() -> Void)?
     /// Fires when pressure first turns bad, so the HUD can announce itself.
     var onNudge: (() -> Void)?
@@ -39,7 +46,7 @@ final class Engine {
     }
 
     private func samplePressure() {
-        reading = PressureMonitor.evaluate(PressureMonitor.currentSample())
+        reading = PressureMonitor.evaluate(sampler.sample())
         onUpdate?()
 
         // Every escalation is reported the moment it happens; the policy only

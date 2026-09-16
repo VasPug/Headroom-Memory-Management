@@ -25,12 +25,14 @@ enum Palette {
         }
     }
 
-    /// The headline states what the machine is doing, not what the number is.
+    /// The headline states how the machine is *doing*, which is no longer the
+    /// same as how much memory is in use. A Mac at 90% with nothing moving is
+    /// healthy, and saying otherwise was the old model's central mistake.
     static func headline(for level: PressureLevel) -> String {
         switch level {
-        case .comfortable: return "Plenty of headroom"
-        case .warn: return "Running low"
-        case .critical: return "Almost out"
+        case .comfortable: return "Memory is healthy"
+        case .warn: return "Memory is under strain"
+        case .critical: return "Your Mac is struggling"
         }
     }
 }

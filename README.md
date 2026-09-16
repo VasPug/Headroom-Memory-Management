@@ -11,6 +11,13 @@ apps you actually use, and asks you to close one while the Mac is still responsi
 - **Lives on the notch.** A slim pill beside the notch shows a meter that fills as memory
   is consumed, green through amber to red. Hover it
   for the full list; it drops out of the notch like part of the hardware.
+- **Judges the machine on what actually hurts.** Not "you're using a lot of memory" —
+  macOS is *designed* to use nearly all of it. It watches the rate of pages swapping out
+  and back in (thrashing, which is what makes a Mac lag), free space on the boot volume
+  (swap can only grow into it, and running out is what triggers "your system has run out
+  of application memory"), and the kernel's own `kern.memorystatus_vm_pressure_level`,
+  which it will never undercut. Swap *totals* are deliberately ignored: they only ever
+  climb, so they say nothing about right now.
 - **Speaks up the moment things get worse.** Every escalation alerts immediately — into
   warning, and again if it goes on to critical. It slides out of the notch with one
   recommendation ("Quit Cursor? Frees 2.4 GB · idle 3d 1h"). Click it for the full list,
@@ -96,7 +103,8 @@ Uninstall: `launchctl bootout gui/$(id -u)/io.github.vaspug.headroom && rm -rf /
 | | |
 |---|---|
 | `HeadroomCore/ProcessScanner` | parses `ps`, folds subtrees into their root |
-| `HeadroomCore/Pressure` | VM stats → a gradient that fires earlier than macOS does |
+| `HeadroomCore/Pressure` | judges thrash rate, disk headroom and the kernel's verdict |
+| `HeadroomCore/PressureSampler` | live VM counters; stateful, because rates need a baseline |
 | `HeadroomCore/Ranker` | what's worth quitting: big, cold, and idle |
 | `HeadroomCore/NudgePolicy` | when it is allowed to interrupt you |
 | `HeadroomCore/UsageTracker` | per-app last-used times, persisted |

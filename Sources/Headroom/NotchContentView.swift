@@ -52,7 +52,7 @@ final class NotchContentView: NSView {
 
     private var headerHeight: CGFloat {
         var h = headerTopPad + 18 + 12 + barHeight + headerBottomPad
-        if reading.sample.swapUsedBytes > 0 { h += 20 }
+        if reading.reason != nil { h += 20 }
         return h
     }
 
@@ -174,7 +174,7 @@ final class NotchContentView: NSView {
     /// meter does: nearly full and red means nearly out. Draining it instead --
     /// so it tracked the "GB free" number -- made a red bar look almost empty,
     /// which read as "barely any problem" at exactly the wrong moment.
-    private var filled: CGFloat { CGFloat(max(0, min(1, reading.score))) }
+    private var filled: CGFloat { CGFloat(max(0, min(1, reading.utilization))) }
 
     private func drawCollapsed() {
         let pill = NSRect(x: 0, y: (bounds.height - 22) / 2, width: bounds.width, height: 22)
@@ -330,7 +330,9 @@ final class NotchContentView: NSView {
         let right = "\(Fmt.gb(reading.sample.availableBytes)) free" as NSString
         let rightAttrs: [NSAttributedString.Key: Any] = [
             .font: Type.number(12.5, .medium),
-            .foregroundColor: level,
+            // Neutral: the meter carries severity, and a low free number is
+            // normal on macOS. Colouring it made healthy machines look alarming.
+            .foregroundColor: Palette.secondary,
         ]
         let rightSize = right.size(withAttributes: rightAttrs)
         right.draw(at: NSPoint(x: bounds.width - sidePad - rightSize.width, y: y + 2), withAttributes: rightAttrs)
@@ -344,13 +346,12 @@ final class NotchContentView: NSView {
         NSBezierPath(roundedRect: NSRect(x: track.minX, y: track.minY, width: w, height: track.height),
                      xRadius: barHeight / 2, yRadius: barHeight / 2).fill()
 
-        if reading.sample.swapUsedBytes > 0 {
+        if let reason = reading.reason {
             y += barHeight + 9
-            // The signal macOS keeps to itself until the machine is already slow.
-            let swap = "\(Fmt.size(reading.sample.swapUsedBytes)) swapped to disk" as NSString
-            swap.draw(at: NSPoint(x: sidePad, y: y), withAttributes: [
+            // Names the actual mechanism, not a number that sounds scary.
+            (reason as NSString).draw(at: NSPoint(x: sidePad, y: y), withAttributes: [
                 .font: Type.number(11, .regular),
-                .foregroundColor: Palette.warn,
+                .foregroundColor: level,
             ])
         }
 

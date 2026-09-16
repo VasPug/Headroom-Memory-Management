@@ -15,15 +15,20 @@ enum Renderer {
         let live = CandidateBuilder.build(rolled: rolled, usage: usage)
 
         // Real machine state.
-        let real = PressureMonitor.evaluate(PressureMonitor.currentSample())
+        var sampler = PressureSampler()
+        _ = sampler.sample()
+        Thread.sleep(forTimeInterval: 2)   // give the rates a baseline
+        let real = PressureMonitor.evaluate(sampler.sample())
         write(state("live", geometry: geometry, reading: real, items: rank(live)), to: dir, name: "01-live-expanded")
 
-        // A machine in trouble, which is the state that matters most.
-        let critical = PressureReading(
-            sample: MemorySample(totalBytes: 16 * 1_073_741_824, freeBytes: 180 * 1_048_576,
-                                 purgeableBytes: 90 * 1_048_576, fileBackedBytes: 600 * 1_048_576,
-                                 compressedBytes: 4 * 1_073_741_824, swapUsedBytes: 3_113_851_290),
-            level: .critical, score: 0.93)
+        // A machine actually in trouble: pages going out and coming straight
+        // back, which is what makes a Mac lag.
+        let critical = PressureMonitor.evaluate(MemorySample(
+            totalBytes: 16 * 1_073_741_824, freeBytes: 180 * 1_048_576,
+            purgeableBytes: 90 * 1_048_576, fileBackedBytes: 600 * 1_048_576,
+            compressedBytes: 4 * 1_073_741_824, swapUsedBytes: 8 * 1_073_741_824,
+            swapOutBytesPerSec: 34_000_000, swapInBytesPerSec: 28_000_000,
+            diskFreeBytes: 120 * 1_073_741_824, kernelPressure: .warn))
         write(state("critical", geometry: geometry, reading: critical, items: rank(live)),
               to: dir, name: "02-critical")
 
@@ -37,14 +42,22 @@ enum Renderer {
         note.layoutSubtreeIfNeeded()
         write(note, to: dir, name: "05-notification")
 
-        // The full colour ramp, which a machine under constant pressure never shows.
-        for (name, usedGB, swapGB) in [("comfortable", 5.0, 0.0), ("warn", 12.0, 0.5), ("critical", 15.0, 5.0)] {
+        // The full ramp: same machine, three different situations.
+        let ramp: [(String, Double, Double, Double, KernelPressure)] = [
+            ("healthy", 13.8, 0, 1.3, .normal),        // high usage, nothing moving
+            ("strain", 14.2, 8, 8, .normal),           // starting to thrash
+            ("struggling", 15.2, 34, 28, .warn),       // thrashing hard
+        ]
+        for (name, usedGB, outMBs, inMBs, kern) in ramp {
             let total: Int64 = 16 * 1_073_741_824
             let avail = total - Int64(usedGB * 1_073_741_824)
-            let sample = MemorySample(totalBytes: total, freeBytes: avail / 3, purgeableBytes: avail / 3,
-                                      fileBackedBytes: avail - 2 * (avail / 3), compressedBytes: 0,
-                                      swapUsedBytes: Int64(swapGB * 1_073_741_824))
-            write(state(name, geometry: geometry, reading: PressureMonitor.evaluate(sample), items: rank(live)),
+            let s = MemorySample(totalBytes: total, freeBytes: avail / 3, purgeableBytes: avail / 3,
+                                 fileBackedBytes: avail - 2 * (avail / 3), compressedBytes: 0,
+                                 swapUsedBytes: 8 * 1_073_741_824,
+                                 swapOutBytesPerSec: outMBs * 1_000_000,
+                                 swapInBytesPerSec: inMBs * 1_000_000,
+                                 diskFreeBytes: 300 * 1_073_741_824, kernelPressure: kern)
+            write(state(name, geometry: geometry, reading: PressureMonitor.evaluate(s), items: rank(live)),
                   to: dir, name: "06-level-\(name)")
         }
 

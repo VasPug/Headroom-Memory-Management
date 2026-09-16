@@ -2,18 +2,18 @@ import Foundation
 
 /// Decides when the HUD is allowed to speak up.
 ///
-/// This is event driven, not rate limited: every time pressure gets worse than
-/// anything already reported, it alerts, immediately. What it will not do is
-/// repeat itself while the situation is unchanged, or fire twice because a
-/// reading wobbled across a threshold. Re-arming needs a genuine recovery, not
-/// the passage of time.
+/// Event driven, not rate limited: any time pressure gets worse than what has
+/// already been reported, it alerts immediately. It stays quiet while nothing
+/// changes, and re-arms once the machine is genuinely calm again — measured by
+/// the pressure level itself, which is now built from rates that fall back to
+/// zero, rather than from swap totals that never come down.
 public struct NudgePolicy: Sendable {
-    /// The worst level already reported in the current episode.
     public private(set) var reported: PressureLevel = .comfortable
+    private var calmStreak = 0
 
-    /// Pressure must fall clearly below the warning line before the policy will
-    /// alert again, so a value hovering on the boundary cannot machine-gun.
-    public static let rearmRatio = PressureMonitor.warnRatio - 0.08
+    /// Consecutive calm readings before it will alert again. Rates fluctuate, so
+    /// one quiet sample is not a recovery.
+    public static let calmSamplesToRearm = 3
 
     public init() {}
 
@@ -30,12 +30,12 @@ public struct NudgePolicy: Sendable {
     ///   it still fires once a candidate appears.
     public mutating func shouldNotify(_ reading: PressureReading,
                                       hasRecommendation: Bool = true) -> Bool {
-        let recovered = reading.sample.usageRatio < Self.rearmRatio
-            && reading.sample.swapUsedBytes < PressureMonitor.warnSwapBytes
-        if recovered {
-            reported = .comfortable
+        if reading.level == .comfortable {
+            calmStreak += 1
+            if calmStreak >= Self.calmSamplesToRearm { reported = .comfortable }
             return false
         }
+        calmStreak = 0
 
         guard rank(reading.level) > rank(reported) else { return false }
         guard hasRecommendation else { return false }
