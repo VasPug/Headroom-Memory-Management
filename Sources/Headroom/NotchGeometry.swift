@@ -49,6 +49,12 @@ struct NotchGeometry {
         min(max(x, screen.frame.minX + 4), screen.frame.maxX - width - 4)
     }
 
+    /// True when the frame actually lands on a display. A stored pill position
+    /// can outlive the arrangement it was chosen in.
+    static func isOnAnyScreen(_ frame: CGRect) -> Bool {
+        NSScreen.screens.contains { $0.frame.intersects(frame) }
+    }
+
     func expandedFrame(contentHeight: CGFloat, width: CGFloat = 400) -> CGRect {
         let height = stripHeight + contentHeight
         // The panel hangs from the notch, but never so far from the pill that

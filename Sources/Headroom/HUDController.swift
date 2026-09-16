@@ -127,13 +127,28 @@ final class HUDController: NSObject {
     // MARK: - Mode transitions
 
     private func frame(for mode: HUDMode) -> CGRect {
-        mode == .collapsed
-            ? geometry.collapsedFrame()
-            : geometry.expandedFrame(contentHeight: content.contentHeight, width: mode.panelWidth)
+        func compute() -> CGRect {
+            mode == .collapsed
+                ? geometry.collapsedFrame()
+                : geometry.expandedFrame(contentHeight: content.contentHeight, width: mode.panelWidth)
+        }
+        let frame = compute()
+        guard !NotchGeometry.isOnAnyScreen(frame) else { return frame }
+
+        // Last resort: a stored pill position that no longer lands on any
+        // display. Forget it rather than opening somewhere invisible.
+        Settings.pillX = nil
+        refreshGeometry()
+        return compute()
     }
 
     private func setMode(_ new: HUDMode, animated: Bool = true) {
         guard new != mode else { return }
+        // Screen layout is re-read on every open. Relying on the change
+        // notification alone left the HUD pinned to a stale arrangement if that
+        // notification arrived while a display was still negotiating, which put
+        // the panel off-screen until the next reconfiguration.
+        refreshGeometry()
         let opening = mode == .collapsed
         mode = new
         content.mode = new
@@ -255,9 +270,13 @@ final class HUDController: NSObject {
         engine.protect(item)
     }
 
-    private func screensChanged() {
+    private func refreshGeometry() {
         geometry = NotchGeometry.current()
         content.geometry = geometry
+    }
+
+    private func screensChanged() {
+        refreshGeometry()
         panel.setFrame(frame(for: mode), display: true)
         content.needsDisplay = true
     }

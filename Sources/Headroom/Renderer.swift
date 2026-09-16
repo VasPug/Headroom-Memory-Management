@@ -28,7 +28,7 @@ enum Renderer {
               to: dir, name: "02-critical")
 
         // The notification, which is how the HUD speaks first.
-        let note = NotchContentView(geometry: geometry, reading: critical)
+        let note = NotchContentView(geometry: geometry, reading: real)
         note.items = rank(live)
         note.mode = .notification
         note.frame = geometry.expandedFrame(contentHeight: NotchContentView.notificationHeight,
